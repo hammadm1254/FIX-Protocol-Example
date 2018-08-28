@@ -1,4 +1,5 @@
-def getSecData(fileName):
+import functools
+def getSecTransactions(fileName):
     with open(fileName, 'r') as datFile:
         data = datFile.read()
     _output = formatSecData(data)
@@ -17,10 +18,28 @@ def formatSecData(secString):
             secDataList.append(secDataJSON)
     return secDataList
 
+def getTagCount(tagName, tagValue, trnsxnList):
+    try:
+        tagName = int(tagName)
+    except ValueError:
+        return 'Tag names are integers'
+    try:
+        tagValue = str(tagValue)
+    except ValueError:
+        return 'Tag Values are strings'
+    count = 0
+    for aTrnsxn in trnsxnList:
+        try:
+            if aTrnsxn[tagName] == tagValue:
+                count += 1
+        except KeyError:
+            pass
+    return count
+
 def main():
     secFileName = 'secdef.dat'
-    secData = getSecData(secFileName)
-    print(len(secData))
+    secTrans = getSecTransactions(secFileName)
+    print(len(secTrans))
 
 if __name__ == '__main__':
     main()
