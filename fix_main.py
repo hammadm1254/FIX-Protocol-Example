@@ -1,4 +1,3 @@
-import functools
 def getSecTransactions(fileName):
     with open(fileName, 'r') as datFile:
         data = datFile.read()
@@ -18,17 +17,35 @@ def formatSecData(secString):
             secDataList.append(secDataJSON)
     return secDataList
 
-def getTagCount(tagName, tagValue, trnsxnList):
-    try:
-        tagName = int(tagName)
-    except ValueError:
-        return 'Tag names are integers'
-    try:
-        tagValue = str(tagValue)
-    except ValueError:
-        return 'Tag Values are strings'
-    result = [ aTrnsxn[tagName] == tagValue for aTrnsxn in trnsxnList]
-    return functools.reduce(lambda x,y: int(x) + int(y), result)
+def verifyInput(tagName, tagValue, trnsxnList):
+    assert(type(tagName) == int or tagName is None), 'Tag names are integer values'
+    assert(type(tagValue) == str or tagValue is None), 'Tag values are strings'
+    assert(type(trnsxnList) == list and len(trnsxnList) > 0), 'List of transactions must not be empty'
+
+def getTransCountByTagValue(tagName, tagValue, trnsxnList):
+    return len(getTransByTagValue(tagName, tagValue, trnsxnList))
+
+def getTransByTagValue(tagName, tagValue, trnsxnList):
+    verifyInput(tagName, tagValue, trnsxnList)
+    return [aTrnsxn for aTrnsxn in trnsxnList if aTrnsxn[tagName] == tagValue]
+
+def getTransByTag(tagName, trnsxnList):
+    verifyInput(tagName, None, trnsxnList)
+    return [aTrnsxsn for aTrnsxsn in trnsxnList if tagName in aTrnsxsn]
+
+def getTransCountByTag(tagName, trnsxnList):
+    verifyInput(tagName, None, trnsxnList)
+    return len(getTransByTag(tagName, trnsxnList))
+
+def countByTag(tagName, trnsxnList):
+    verifyInput(tagName, None, trnsxnList)
+    resultDict = {}
+    for aTrnsxn in trnsxnList:
+        try:
+            resultDict[aTrnsxn[tagName]] += 1
+        except KeyError:
+            resultDict[aTrnsxn[tagName]] = 1
+    return resultDict
 
 def main():
     secFileName = 'secdef.dat'
