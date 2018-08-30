@@ -1,21 +1,62 @@
+from multiprocessing import Process
+from multiprocessing import Queue
+
 def getSecTransactions(fileName):
     with open(fileName, 'r') as datFile:
         data = datFile.read()
-    _output = formatSecData(data)
+    _output = multiProcesFormat(data)
     del data
     return _output
 
-def formatSecData(secString):
-    secDataList =[]
-    for line in secString.split('\n'):
+def multiProcesFormat(secString):
+    resultQueue = Queue()
+    secTransCollection = []
+    secTransTemp = secString.split('\n')
+    numOfProc = 10
+    index = 0
+    transLength = len(secTransTemp)
+    step = int(transLength / numOfProc) + 1
+    offset = step
+    while index < transLength:
+        secTransCollection.append(secTransTemp[index:offset])
+        if (offset + step) > transLength:
+            index = offset
+            offset = transLength
+        else:
+            index = offset
+            offset += step
+
+    secTransCollection = []
+    for i in range(5):
+        secTransCollection.append(secTransTemp[:3])
+
+    print(secTransCollection)
+    procs = [Process(target=formatSecData, args=(collection, resultQueue)) for collection in secTransCollection]
+    print('Number of procs: ', len(procs))
+    for p in procs:
+        p.start()
+
+    for p in procs:
+        p.join()
+
+    __rQ = []
+    while not resultQueue.empty():
+        __rQ.append(resultQueue.get())
+
+    return __rQ
+
+def formatSecData(transCollection, aQueue):
+    secDataList = []
+    for line in transCollection:
         secDataJSON = {}
         for tagValuePair in line.split('\x01'):
             if len(tagValuePair) > 0:
                 tagValueList = tagValuePair.split('=')
                 secDataJSON[int(tagValueList[0])] = tagValueList[1]
         if len(secDataJSON) > 0:
-            secDataList.append(secDataJSON)
-    return secDataList
+            #secDataList.append(secDataJSON)
+            aQueue.put(secDataJSON)
+    #aQueue.put(secDataList)
 
 def verifyInput(tagName, tagValue, trnsxnList):
     assert(type(tagName) == int or tagName is None), 'Tag names are integer values'
@@ -37,7 +78,7 @@ def getTransCountByTag(tagName, trnsxnList):
     verifyInput(tagName, None, trnsxnList)
     return len(getTransByTag(tagName, trnsxnList))
 
-def countByTag(tagName, trnsxnList):
+def getValueCountForTag(tagName, trnsxnList):
     verifyInput(tagName, None, trnsxnList)
     resultDict = {}
     for aTrnsxn in trnsxnList:
