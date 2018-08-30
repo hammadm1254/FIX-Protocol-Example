@@ -37,7 +37,7 @@ def getTransCountByTag(tagName, trnsxnList):
     verifyInput(tagName, None, trnsxnList)
     return len(getTransByTag(tagName, trnsxnList))
 
-def countByTag(tagName, trnsxnList):
+def countValuesByTag(tagName, trnsxnList):
     verifyInput(tagName, None, trnsxnList)
     resultDict = {}
     for aTrnsxn in trnsxnList:
