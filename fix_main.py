@@ -1,7 +1,9 @@
 def getSecTransactions(fileName):
     with open(fileName, 'r') as datFile:
         data = datFile.read()
+    assert(len(data) > 0), 'Data file must be non-empty and contain valid FIX data'
     _output = formatSecData(data)
+    assert(len(_output) > 0), 'No FIX data was found in file'
     del data
     return _output
 
@@ -10,10 +12,10 @@ def formatSecData(secString):
     for line in secString.split('\n'):
         secDataJSON = {}
         for tagValuePair in line.split('\x01'):
-            if len(tagValuePair) > 0:
+            if len(tagValuePair) > 1:
                 tagValueList = tagValuePair.split('=')
                 secDataJSON[int(tagValueList[0])] = tagValueList[1]
-        if len(secDataJSON) > 0:
+        if len(secDataJSON) > 0 and 35 in secDataJSON:
             secDataList.append(secDataJSON)
     return secDataList
 
@@ -27,7 +29,7 @@ def getTransCountByTagValue(tagName, tagValue, trnsxnList):
 
 def getTransByTagValue(tagName, tagValue, trnsxnList):
     verifyInput(tagName, tagValue, trnsxnList)
-    return [aTrnsxn for aTrnsxn in trnsxnList if aTrnsxn[tagName] == tagValue]
+    return [aTrnsxn for aTrnsxn in trnsxnList if tagName in aTrnsxn and aTrnsxn[tagName] == tagValue]
 
 def getTransByTag(tagName, trnsxnList):
     verifyInput(tagName, None, trnsxnList)
@@ -37,15 +39,43 @@ def getTransCountByTag(tagName, trnsxnList):
     verifyInput(tagName, None, trnsxnList)
     return len(getTransByTag(tagName, trnsxnList))
 
-def countValuesByTag(tagName, trnsxnList):
+def countValuesByTag(tagName, trnsxnList): #Q1
     verifyInput(tagName, None, trnsxnList)
     resultDict = {}
     for aTrnsxn in trnsxnList:
-        try:
-            resultDict[aTrnsxn[tagName]] += 1
-        except KeyError:
-            resultDict[aTrnsxn[tagName]] = 1
+        if tagName in aTrnsxn:
+            try:
+                resultDict[aTrnsxn[tagName]] += 1
+            except KeyError:
+                resultDict[aTrnsxn[tagName]] = 1
     return resultDict
+
+def joinByTag(innerTag, outerTag, trnsxnList):
+    verifyInput(innerTag, None, trnsxnList)
+    verifyInput(outerTag, None, trnsxnList)
+    outerTagTagValues = countValuesByTag(outerTag, trnsxnList).keys()
+    result = {}
+    for value in outerTagTagValues:
+        result[str(outerTag) + '=' + value] = countValuesByTag(innerTag, getTransByTagValue(outerTag, value, trnsxnList))
+    return result
+
+def sortByTagsValue(tagName, trnsxnList): #Nulls are first
+    verifyInput(tagName, None, trnsxnList)
+    def getKey(dictItem):
+        if tagName in dictItem:
+            return dictItem[tagName]
+        else:
+            return ''
+    return sorted(trnsxnList, key=getKey)
+
+def getTransWOTag(tagName, trnsxnList):
+    verifyInput(tagName, None, trnsxnList)
+    return [aTrnsxsn for aTrnsxsn in trnsxnList if tagName not in aTrnsxsn]
+
+def getTransWOTagValue(tagName, tagValue, trnsxsnList):
+    verifyInput(tagName, tagValue, trnsxsnList)
+    return [aTrnsxsn for aTrnsxsn in trnsxsnList if tagName not in aTrnsxsn or aTrnsxsn[tagName] != tagValue]
+
 
 def main():
     secFileName = 'secdef.dat'
