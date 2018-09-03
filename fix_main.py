@@ -4,7 +4,7 @@ import time
 from pprint import pprint
 
 def loadFiles(filesList):
-    print("Loading data...")
+    print("\nLoading data...\n")
     data = []
     for fileName in filesList:
         with open(fileName, 'r') as datFile:
@@ -55,6 +55,10 @@ def countValuesByTag(tagName, defList):
                 resultDict[definition[tagName]] = 1
     return resultDict
 
+def getValuesOfTag(tagName, defList):
+    verifyInput(tagName, None, defList)
+    return list(countValuesByTag(tagName, defList).keys())
+
 def joinByTag(innerTag, outerTag, defList):
     verifyInput(innerTag, None, defList)
     verifyInput(outerTag, None, defList)
@@ -86,9 +90,10 @@ def main():
     pool = Pool()
     secFileNames = glob.glob('*.dat')
     secFileNamesSize = len(secFileNames)
+    print("Available .dat files found in directory: \n")
     for i in range(secFileNamesSize):
         print(i+1, secFileNames[i])
-    inStr = input("Press Enter to load all files. Data from files wll be concatenated.\nElse indicate number of the file to load and press Enter: ")
+    inStr = input("\nPress Enter to load all files. Data from files wll be concatenated.\nElse indicate number of the file to load and press Enter: ")
     if inStr != '':
         try:
             index = int(inStr)
@@ -115,7 +120,8 @@ def main():
     pprint(joinByTag(167, 462, secDefs))
     print("\n")
     print("Question 3:")
-    pprint(countValuesByTag(55, sortByTagsValue(200, getDefByTagValue(167, 'FUT', getDefByTagValue(6937, 'GE', getDefsExcludingTag(555, secDefs))))[:4]))
+    pprint(getValuesOfTag(55, sortByTagsValue(200, getDefByTagValue(167, 'FUT', getDefByTagValue(6937, 'GE', getDefsExcludingTag(555, secDefs))))[:4]))
+    print("\nExiting...\n")
     exit()
 
 if __name__ == '__main__':
