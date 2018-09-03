@@ -93,9 +93,11 @@ def main():
         else:
             index -= 1
     except ValueError:
-        print("Input must be integer between 1 and ", secFileNamesSize)
+        print("Input must be integer between 1 and ", secFileNamesSize, "\n")
+        main()
     secTrans = getSecTransactions(secFileNames[index])
     print(len(secTrans))
+    exit()
 
 if __name__ == '__main__':
     main()
