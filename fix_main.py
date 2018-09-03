@@ -1,3 +1,5 @@
+import glob
+
 def getSecTransactions(fileName):
     with open(fileName, 'r') as datFile:
         data = datFile.readlines()
@@ -79,8 +81,20 @@ def getTransWOTagValue(tagName, tagValue, trnsxsnList):
 
 
 def main():
-    secFileName = 'secdef.dat'
-    secTrans = getSecTransactions(secFileName)
+    secFileNames = glob.glob('*.dat')
+    secFileNamesSize = len(secFileNames)
+    for i in range(secFileNamesSize):
+        print(i+1, secFileNames[i])
+    inStr = input("Indicate the number of the file to load and press Enter: ")
+    try:
+        index = int(inStr)
+        if index < 1 or index > secFileNamesSize:
+            raise ValueError
+        else:
+            index -= 1
+    except ValueError:
+        print("Input must be integer between 1 and ", secFileNamesSize)
+    secTrans = getSecTransactions(secFileNames[index])
     print(len(secTrans))
 
 if __name__ == '__main__':
