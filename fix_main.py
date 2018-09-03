@@ -1,102 +1,121 @@
 import glob
+from multiprocessing import Pool
+import time
+from pprint import pprint
 
-def getSecTransactions(fileName):
-    with open(fileName, 'r') as datFile:
-        data = datFile.readlines()
-    assert(len(data) > 0), 'Data file must be non-empty and contain valid FIX data'
-    _output = formatSecData(data)
-    assert(len(_output) > 0), 'No FIX data was found in file'
-    del data
-    return _output
+def loadFiles(filesList):
+    print("Loading data...")
+    data = []
+    for fileName in filesList:
+        with open(fileName, 'r') as datFile:
+            data += datFile.readlines()
+        assert(len(data) > 0), 'Data file must be non-empty and contain valid FIX data'
+    return data
 
-def formatSecData(dataList):
-    secDataList = []
-    for line in dataList:
-        secDataJSON = {}
-        for tagValuePair in line.split('\x01'):
-            if len(tagValuePair) > 1:
-                tagValueList = tagValuePair.split('=')
-                if len(tagValueList) == 2:
-                    secDataJSON[int(tagValueList[0])] = tagValueList[1]
-        if len(secDataJSON) > 0 and 35 in secDataJSON:
-            secDataList.append(secDataJSON)
-    return secDataList
+def getDefsDict(defLine):
+    secDataJSON = {}
+    for tagValuePair in defLine.split('\x01'):
+        if len(tagValuePair) > 1:
+            tagValueList = tagValuePair.split('=')
+            if len(tagValueList) == 2:
+                secDataJSON[int(tagValueList[0])] = tagValueList[1]
+    if len(secDataJSON) > 0 and 35 in secDataJSON:
+        return secDataJSON
+    else:
+        raise TypeError('Definition type is invalid, Tag-35 not found')
 
-def verifyInput(tagName, tagValue, trnsxnList):
+def verifyInput(tagName, tagValue, defList):
     assert(type(tagName) == int or tagName is None), 'Tag names are integer values'
     assert(type(tagValue) == str or tagValue is None), 'Tag values are strings'
-    assert(type(trnsxnList) == list and len(trnsxnList) > 0), 'List of transactions must not be empty'
+    assert(type(defList) == list and len(defList) > 0), 'List of transactions must not be empty'
 
-def getTransCountByTagValue(tagName, tagValue, trnsxnList):
-    return len(getTransByTagValue(tagName, tagValue, trnsxnList))
+def countDefTagValue(tagName, tagValue, defList):
+    return len(getDefByTagValue(tagName, tagValue, defList))
 
-def getTransByTagValue(tagName, tagValue, trnsxnList):
-    verifyInput(tagName, tagValue, trnsxnList)
-    return [aTrnsxn for aTrnsxn in trnsxnList if tagName in aTrnsxn and aTrnsxn[tagName] == tagValue]
+def getDefByTagValue(tagName, tagValue, defList):
+    verifyInput(tagName, tagValue, defList)
+    return [definition for definition in defList if tagName in definition and definition[tagName] == tagValue]
 
-def getTransByTag(tagName, trnsxnList):
-    verifyInput(tagName, None, trnsxnList)
-    return [aTrnsxsn for aTrnsxsn in trnsxnList if tagName in aTrnsxsn]
+def getDefByTag(tagName, defList):
+    verifyInput(tagName, None, defList)
+    return [definition for definition in defList if tagName in definition]
 
-def getTransCountByTag(tagName, trnsxnList):
-    verifyInput(tagName, None, trnsxnList)
-    return len(getTransByTag(tagName, trnsxnList))
+def countDefByTag(tagName, defList):
+    verifyInput(tagName, None, defList)
+    return len(getDefByTag(tagName, defList))
 
-def countValuesByTag(tagName, trnsxnList): #Q1
-    verifyInput(tagName, None, trnsxnList)
+def countValuesByTag(tagName, defList):
+    verifyInput(tagName, None, defList)
     resultDict = {}
-    for aTrnsxn in trnsxnList:
-        if tagName in aTrnsxn:
+    for definition in defList:
+        if tagName in definition:
             try:
-                resultDict[aTrnsxn[tagName]] += 1
+                resultDict[definition[tagName]] += 1
             except KeyError:
-                resultDict[aTrnsxn[tagName]] = 1
+                resultDict[definition[tagName]] = 1
     return resultDict
 
-def joinByTag(innerTag, outerTag, trnsxnList):
-    verifyInput(innerTag, None, trnsxnList)
-    verifyInput(outerTag, None, trnsxnList)
-    outerTagTagValues = countValuesByTag(outerTag, trnsxnList).keys()
+def joinByTag(innerTag, outerTag, defList):
+    verifyInput(innerTag, None, defList)
+    verifyInput(outerTag, None, defList)
+    outerTagTagValues = countValuesByTag(outerTag, defList).keys()
     result = {}
     for value in outerTagTagValues:
-        result[str(outerTag) + '=' + value] = countValuesByTag(innerTag, getTransByTagValue(outerTag, value, trnsxnList))
+        result[str(outerTag) + '=' + value] = countValuesByTag(innerTag, getDefByTagValue(outerTag, value, defList))
     return result
 
-def sortByTagsValue(tagName, trnsxnList): #Nulls are first
-    verifyInput(tagName, None, trnsxnList)
+def sortByTagsValue(tagName, defList): #Nulls are first
+    verifyInput(tagName, None, defList)
     def getKey(dictItem):
         if tagName in dictItem:
             return dictItem[tagName]
         else:
             return ''
-    return sorted(trnsxnList, key=getKey)
+    return sorted(defList, key=getKey)
 
-def getTransWOTag(tagName, trnsxnList):
-    verifyInput(tagName, None, trnsxnList)
-    return [aTrnsxsn for aTrnsxsn in trnsxnList if tagName not in aTrnsxsn]
+def getDefsExcludingTag(tagName, defList):
+    verifyInput(tagName, None, defList)
+    return [definition for definition in defList if tagName not in definition]
 
-def getTransWOTagValue(tagName, tagValue, trnsxsnList):
-    verifyInput(tagName, tagValue, trnsxsnList)
-    return [aTrnsxsn for aTrnsxsn in trnsxsnList if tagName not in aTrnsxsn or aTrnsxsn[tagName] != tagValue]
+def getDefsExcludingTagValue(tagName, tagValue, defList):
+    verifyInput(tagName, tagValue, defList)
+    return [definition for definition in defList if tagName not in definition or definition[tagName] != tagValue]
 
 
 def main():
+    pool = Pool()
     secFileNames = glob.glob('*.dat')
     secFileNamesSize = len(secFileNames)
     for i in range(secFileNamesSize):
         print(i+1, secFileNames[i])
-    inStr = input("Indicate the number of the file to load and press Enter: ")
-    try:
-        index = int(inStr)
-        if index < 1 or index > secFileNamesSize:
-            raise ValueError
-        else:
-            index -= 1
-    except ValueError:
-        print("Input must be integer between 1 and ", secFileNamesSize, "\n")
-        main()
-    secTrans = getSecTransactions(secFileNames[index])
-    print(len(secTrans))
+    inStr = input("Press Enter to load all files. Data from files wll be concatenated.\nElse indicate number of the file to load and press Enter: ")
+    if inStr != '':
+        try:
+            index = int(inStr)
+            if index < 1 or index > secFileNamesSize:
+                raise ValueError
+            else:
+                index -= 1
+                secFileNames = [secFileNames[index]]
+        except ValueError:
+            print("Input must be integer between 1 and ", secFileNamesSize, "\n")
+            main()
+    startLoad = time.time()
+    defLines = loadFiles(secFileNames)
+    loadTime = time.time() - startLoad
+    startProcess = time.time()
+    secDefs = list(pool.map(getDefsDict, defLines))
+    processTime = time.time() - startProcess
+    print("Load Time:", loadTime, "| Process Time:", processTime, "\n")
+    del pool
+    print("Question 1:")
+    pprint(countValuesByTag(167, secDefs))
+    print("\n")
+    print("Question 2:")
+    pprint(joinByTag(167, 462, secDefs))
+    print("\n")
+    print("Question 3:")
+    pprint(countValuesByTag(55, sortByTagsValue(200, getDefByTagValue(167, 'FUT', getDefByTagValue(6937, 'GE', getDefsExcludingTag(555, secDefs))))[:4]))
     exit()
 
 if __name__ == '__main__':
