@@ -1,20 +1,21 @@
 def getSecTransactions(fileName):
     with open(fileName, 'r') as datFile:
-        data = datFile.read()
+        data = datFile.readlines()
     assert(len(data) > 0), 'Data file must be non-empty and contain valid FIX data'
     _output = formatSecData(data)
     assert(len(_output) > 0), 'No FIX data was found in file'
     del data
     return _output
 
-def formatSecData(secString):
-    secDataList =[]
-    for line in secString.split('\n'):
+def formatSecData(dataList):
+    secDataList = []
+    for line in dataList:
         secDataJSON = {}
         for tagValuePair in line.split('\x01'):
             if len(tagValuePair) > 1:
                 tagValueList = tagValuePair.split('=')
-                secDataJSON[int(tagValueList[0])] = tagValueList[1]
+                if len(tagValueList) == 2:
+                    secDataJSON[int(tagValueList[0])] = tagValueList[1]
         if len(secDataJSON) > 0 and 35 in secDataJSON:
             secDataList.append(secDataJSON)
     return secDataList
