@@ -111,6 +111,7 @@ def main():
     startProcess = time.time()
     secDefs = list(pool.map(getDefsDict, defLines))
     processTime = time.time() - startProcess
+    del defLines
     print("Load Time:", loadTime, "| Process Time:", processTime, "\n")
     del pool
     print("Question 1:")
