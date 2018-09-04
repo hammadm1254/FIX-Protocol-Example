@@ -166,7 +166,7 @@ def sort_by_tag(tagName, defList): #Nulls are first
     verify_input(tagName, None, defList)
     def getKey(dictItem):
         if tagName in dictItem:
-            return dictItem[tagName]
+            return dictItem[tagName].lower()
         else:
             return ''
     return sorted(defList, key=getKey)
