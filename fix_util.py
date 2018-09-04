@@ -1,4 +1,4 @@
-def loadFiles(filesList):
+def load_files(filesList):
     """
     Reads the lines in the file(s) and returns a list of the lines.
     If multiple files are in a list the lines of all the files are
@@ -6,6 +6,8 @@ def loadFiles(filesList):
     :param filesList: List of file names
     :return: List of lines in a file as strings
     """
+    if len(filesList) < 1 or type(filesList) != list:
+        raise ValueError('List must contain names of security definition dat file as strings')
     print("\nLoading data...\n")
     data = []
     for fileName in filesList:
@@ -14,15 +16,17 @@ def loadFiles(filesList):
         assert(len(data) > 0), 'Data file must be non-empty and contain valid FIX data'
     return data
 
-def getDefsDict(defLine):
+def get_defs_dict(defLine):
     """
     Uses line splitting to parse the lines of strings in the list
     and generate a dictionary of Key-value pairs for tags and their
     respected values.
-    :param defLine: Lines of security definition data in a list
-    :return: List of dictionaries of security definition with
+    :param defLine: A single line from security definition file as str
+    :return: A dictionary of security definition with
             Tag=Key in dictionary, value of tag=value in dictionary.
     """
+    if len(defLine) < 4 or type(defLine) != str:
+        raise ValueError('String must be a valid line of security definition data')
     secDataJSON = {}
     for tagValuePair in defLine.split('\x01'):
         if len(tagValuePair) > 1:
@@ -34,7 +38,7 @@ def getDefsDict(defLine):
     else:
         raise TypeError('Definition type is invalid, Tag-35 not found')
 
-def verifyInput(tagName, tagValue, defList):
+def verify_input(tagName, tagValue, defList):
     """
     Checks the input type input variables. Throws asserts if type is mismatch
     :param tagName: Value of tag as integer
@@ -46,9 +50,9 @@ def verifyInput(tagName, tagValue, defList):
     assert(type(tagValue) == str or tagValue is None), 'Tag values are strings'
     assert(type(defList) == list and len(defList) > 0), 'List of transactions must not be empty'
 
-def countDefTagValue(tagName, tagValue, defList):
+def count_defs_by_tag_value(tagName, tagValue, defList):
     """
-    Uses getDefByTagValue function to count how many security definition lines
+    Uses get_defs_by_tag_value function to count how many security definition lines
     contain a specific tag/value pair
     :param tagName: Value of tag as integer
     :param tagValue: The value of a specific tag as string
@@ -56,9 +60,9 @@ def countDefTagValue(tagName, tagValue, defList):
     :return: Integer value of length of list of security definition dictionary
             which contain a specific tag/value pair.
     """
-    return len(getDefByTagValue(tagName, tagValue, defList))
+    return len(get_defs_by_tag_value(tagName, tagValue, defList))
 
-def getDefByTagValue(tagName, tagValue, defList):
+def get_defs_by_tag_value(tagName, tagValue, defList):
     """
     Returns the list of dictionary objects containing security definitions
     which contain a specific tag-value pair
@@ -68,10 +72,10 @@ def getDefByTagValue(tagName, tagValue, defList):
     :return: Returns the list of dictionary objects containing security definitions
             which contain a specific tag-value pair
     """
-    verifyInput(tagName, tagValue, defList)
+    verify_input(tagName, tagValue, defList)
     return [definition for definition in defList if tagName in definition and definition[tagName] == tagValue]
 
-def getDefByTag(tagName, defList):
+def get_defs_by_tag(tagName, defList):
     """
     Returns the list of dictionary objects containing security definitions
     which contain a specific tag
@@ -80,10 +84,10 @@ def getDefByTag(tagName, defList):
     :return: Returns the list of dictionary objects containing security definitions
             which contain a specific tag
     """
-    verifyInput(tagName, None, defList)
+    verify_input(tagName, None, defList)
     return [definition for definition in defList if tagName in definition]
 
-def countDefByTag(tagName, defList):
+def count_defs_by_tag(tagName, defList):
     """
     Counts the number of security definitions which contain a specific tag
     :param tagName: Value of tag as integer
@@ -91,10 +95,10 @@ def countDefByTag(tagName, defList):
     :return: Return an integer of the number of security definitions containing
             the specified tag
     """
-    verifyInput(tagName, None, defList)
-    return len(getDefByTag(tagName, defList))
+    verify_input(tagName, None, defList)
+    return len(get_defs_by_tag(tagName, defList))
 
-def countValuesByTag(tagName, defList):
+def count_values_by_tag(tagName, defList):
     """
     This functions generates a dictionary of all the possible values found
     in the security definitions list for a specific tag and the number of times
@@ -103,7 +107,7 @@ def countValuesByTag(tagName, defList):
     :param defList: List of dictionaries which contain security definition data
     :return: Dictionary of tag values and their occurrences
     """
-    verifyInput(tagName, None, defList)
+    verify_input(tagName, None, defList)
     resultDict = {}
     for definition in defList:
         if tagName in definition:
@@ -113,20 +117,20 @@ def countValuesByTag(tagName, defList):
                 resultDict[definition[tagName]] = 1
     return resultDict
 
-def getValuesOfTag(tagName, defList):
+def get_values_of_tag(tagName, defList):
     """
-    This function uses the countValuesByTag function to generate a set of all
+    This function uses the count_values_by_tag function to generate a set of all
     the possible tag values found in the security definitions for a specific tag
     :param tagName: Value of tag as integer
     :param defList: List of dictionaries which contain security definition data
     :return: Set of values of specific tag
     """
-    verifyInput(tagName, None, defList)
-    return list(countValuesByTag(tagName, defList).keys())
+    verify_input(tagName, None, defList)
+    return list(count_values_by_tag(tagName, defList).keys())
 
-def joinByTag(innerTag, outerTag, defList):
+def join_by_tag(innerTag, outerTag, defList):
     """
-    This function uses countValuesByTag and getDefByTagValue functions to find the
+    This function uses count_values_by_tag and get_defs_by_tag_value functions to find the
     intersection of security definitions which contain both specified tags. The resulting
     dictionary has all possible tag values for outerTag as keys and the values for each is
     the occurrences of values of the inner tag for the specific outer tag and value as key.
@@ -143,15 +147,15 @@ def joinByTag(innerTag, outerTag, defList):
     :param defList: List of dictionaries which contain security definition data
     :return: Dictionary of occurrences of intersection tags/values
     """
-    verifyInput(innerTag, None, defList)
-    verifyInput(outerTag, None, defList)
-    outerTagTagValues = countValuesByTag(outerTag, defList).keys()
+    verify_input(innerTag, None, defList)
+    verify_input(outerTag, None, defList)
+    outerTagTagValues = count_values_by_tag(outerTag, defList).keys()
     result = {}
     for value in outerTagTagValues:
-        result[str(outerTag) + '=' + value] = countValuesByTag(innerTag, getDefByTagValue(outerTag, value, defList))
+        result[str(outerTag) + '=' + value] = count_values_by_tag(innerTag, get_defs_by_tag_value(outerTag, value, defList))
     return result
 
-def sortByTagsValue(tagName, defList): #Nulls are first
+def sort_by_tag(tagName, defList): #Nulls are first
     """
     This function sorts the security definitions list on the values of the
     specified tagName
@@ -159,7 +163,7 @@ def sortByTagsValue(tagName, defList): #Nulls are first
     :param defList: List of dictionaries which contain security definition data
     :return: Sorted security definitions list
     """
-    verifyInput(tagName, None, defList)
+    verify_input(tagName, None, defList)
     def getKey(dictItem):
         if tagName in dictItem:
             return dictItem[tagName]
@@ -167,7 +171,7 @@ def sortByTagsValue(tagName, defList): #Nulls are first
             return ''
     return sorted(defList, key=getKey)
 
-def getDefsExcludingTag(tagName, defList):
+def get_defs_excluding_tag(tagName, defList):
     """
     This function generates a list of security definitions which do not contain a
     specific tag
@@ -176,12 +180,12 @@ def getDefsExcludingTag(tagName, defList):
     :return: List of security definitions which do not contain a
             specific tag
     """
-    verifyInput(tagName, None, defList)
+    verify_input(tagName, None, defList)
     return [definition for definition in defList if tagName not in definition]
 
-def getDefsExcludingTagValue(tagName, tagValue, defList):
+def get_defs_excluding_tag_value(tagName, tagValue, defList):
     """
-    This function uses the getDefsExcludingTag function to generate a list of
+    This function uses the get_defs_excluding_tag function to generate a list of
     security definitions which do not contain the specified tag-value pair.
     :param tagName: Value of tag as integer
     :param tagValue: The value of a specific tag as string
@@ -189,5 +193,5 @@ def getDefsExcludingTagValue(tagName, tagValue, defList):
     :return: List of security definitions which do not contain a
             specific tag-value pair
     """
-    verifyInput(tagName, tagValue, defList)
+    verify_input(tagName, tagValue, defList)
     return [definition for definition in defList if tagName not in definition or definition[tagName] != tagValue]

@@ -33,22 +33,22 @@ def main():
             print("Input must be integer between 1 and ", secFileNamesSize, "\n")
             main()
     startLoad = time()
-    defLines = loadFiles(secFileNames)
+    defLines = load_files(secFileNames)
     loadTime = time() - startLoad
     startProcess = time()
-    secDefs = list(pool.map(getDefsDict, defLines))
+    secDefs = list(pool.map(get_defs_dict, defLines))
     processTime = time() - startProcess
     del defLines
     print("Load Time:", loadTime, "| Process Time:", processTime, "\n")
     pool.close()
     print("Question 1:")
-    pprint(countValuesByTag(167, secDefs))
+    pprint(count_values_by_tag(167, secDefs))
     print("\n")
     print("Question 2:")
-    pprint(joinByTag(167, 462, secDefs))
+    pprint(join_by_tag(167, 462, secDefs))
     print("\n")
     print("Question 3:")
-    pprint(getValuesOfTag(55, sortByTagsValue(200, getDefByTagValue(167, 'FUT', getDefByTagValue(6937, 'GE', getDefsExcludingTag(555, secDefs))))[:4]))
+    pprint(get_values_of_tag(55, sort_by_tag(200, get_defs_by_tag_value(167, 'FUT', get_defs_by_tag_value(6937, 'GE', get_defs_excluding_tag(555, secDefs))))[:4]))
     _ = input("\nPress Enter to exit...\n")
     exit()
 
